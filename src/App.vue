@@ -1,74 +1,84 @@
-<script>
-import Modal from './components/Modal.vue';
+<script setup>
+import { onMounted, ref } from "vue";
+import Modal from "./components/Modal.vue";
+import { getTasks } from "./composables/getTasks";
+import { deleteTask } from "./composables/deleleTask";
+import { addTask } from "./composables/addTask";
 
-export default {
-    name: 'App',
-    components: {Modal},
-    data(){
-      return{
-        taskInput: '',
-        tasks: [],
-        isEditing: false,
-        editedTask: '',
-        currentEditIndex: null
+const { tasks } = getTasks();
+const taskInput = ref("");
+const isEditing = ref(false);
 
-        
-      }
-    },
-    methods: {
-      addTask(){
-        if(this.taskInput.trim() !== ''){
-          const newTask = {
-          name: this.taskInput,
-          isChecked: false
-        }
-        this.tasks.push(newTask)
-        this.taskInput = ''
-        }
-        
+const editedTask = ref("");
+const currentId = ref("");
+const currentEditIndex = ref(null);
 
-      },
-      deleteTask(index){
-        this.tasks.splice(index, 1)
-      },
-      editTask(index){
-        this.isEditing = !this.isEditing
-        this.currentEditIndex = index
-        this.editedTask = this.tasks[index].name
-      }, 
-      handleEdit(data){
-        if(this.currentEditIndex !== null){
-          this.tasks[this.currentEditIndex].name = data
-        }
-        this.isEditing = false
-        this.currentEditIndex = null
-      },
-      cancelEdit(data){
-        this.isEditing = data
-      }
-    }
-}
+const taskAdd = async () => {
+  if (taskInput.value.trim() !== "") {
+    const data = {
+      name: taskInput.value,
+      completed: false,
+    };
+    await addTask(data);
+    taskInput.value = "";
+  }
+};
+
+const delTask = (id) => {
+  deleteTask(id);
+};
+
+const editTask = (index) => {
+  isEditing.value = true;
+  currentEditIndex.value = index;
+  currentId.value = tasks.value[index].id;
+  editedTask.value = tasks.value[index].name;
+};
+
+const handleEdit = (data) => {
+  console.log(data);
+  // if (currentEditIndex.value !== null) {
+  //   tasks.value[currentEditIndex.value].name = data;
+  // }
+  // isEditing.value = false;
+  // currentEditIndex.value = null;
+};
+
+const cancelEdit = (data) => {
+  isEditing.value = data;
+};
 </script>
 
 <template>
-  <h1>To Do List</h1> 
-  <input type="text"  @keyup.enter="addTask" placeholder="Enter Task" v-model="taskInput">
-  <button @click="addTask">Add Task</button>
+  <h1>To Do List</h1>
+  <input
+    type="text"
+    @keyup.enter="taskAdd"
+    placeholder="Enter Task"
+    v-model="taskInput"
+  />
+  <button @click="taskAdd">Add Task</button>
   <ul>
-    <li v-for="(task, index) in tasks" :key="index">
+    <li v-for="(task, index) in tasks" :key="task.id">
       <p>{{ task.name }}</p>
       <div class="btns">
         <button @click="editTask(index)">Edit</button>
-        <button @click="deleteTask(index)">Delete</button>
+        <button @click="delTask(task.id)">Delete</button>
       </div>
     </li>
   </ul>
 
-  <Modal @edit-data="handleEdit" @cancel-edit="cancelEdit" :currentTask="editedTask" class="editModal" v-show="isEditing" />
+  <Modal
+    @cancel-edit="cancelEdit"
+    :currentTask="editedTask"
+    :taskId="currentId"
+    class="editModal"
+    v-show="isEditing"
+  />
 </template>
 
 <style scoped>
-input{
+input {
   display: inline-block;
   padding: 13px;
   border-radius: 10px;
@@ -76,16 +86,15 @@ input{
   width: 50%;
   background: rgb(227, 227, 225);
   box-shadow: 0px 0 5px grey, -0px 0 5px grey;
-
 }
 
-ul{
+ul {
   padding: 0;
   margin: 0;
   list-style: none;
 }
 
-li{
+li {
   display: flex;
   justify-content: space-between;
   text-align: left;
@@ -97,7 +106,7 @@ li{
   box-shadow: 0px 0 5px grey, -0px 0 5px grey;
 }
 
-button{
+button {
   margin: 30px auto;
   margin-left: 15px;
   display: inline-block;
@@ -108,32 +117,26 @@ button{
   cursor: pointer;
 }
 
-.editModal{
+.editModal {
   z-index: 1000;
 }
 
-.btns{
+.btns {
   padding: 3px;
   display: inline-block;
   text-align: center;
   align-content: center;
-  
 }
 
-.btns button{
+.btns button {
   display: inline-block;
   margin: 0;
   margin-left: 20px;
-  
-  
-  
 }
 
-p{
+p {
   max-width: 250px;
   text-align: left;
   align-content: center;
-  
 }
-
 </style>
